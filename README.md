@@ -67,7 +67,7 @@ Add a new semester by adding rows with a new `Semester` name. Delete rows to ret
 - **Vanilla JavaScript** for all logic (date generation, CSV parsing, CSV/ICS export)
 - **Google Fonts** (Montserrat, JetBrains Mono) loaded via CDN link
 - **Browser File API** (`FileReader`) for CSV upload; `Blob` + object URLs for CSV/ICS export/download
-- **Artifact storage API** (`window.storage`) for autosave/reload — personal-scope only, not shared between users
+- **Browser `localStorage`** for autosave/reload — tied to the browser/device the file is opened in, not shared or synced between users or machines
 
 No external JS dependencies, no npm, no package.json. The entire application is one `.html` file that runs client-side in the browser it's opened in.
 
@@ -75,7 +75,7 @@ No external JS dependencies, no npm, no package.json. The entire application is 
 
 - **Calendar layer** — `parseCalendarCSV()` turns uploaded CSV text into a `SEMESTERS` object (span, cutoff, no-go dates, soft windows) keyed by semester name. `isHardBlackout()`, `hardFlagLabel()`, `cutoffFlagLabel()`, and `softFlagLabel()` answer "is this date okay, and why/why not."
 - **Generation logic** — `generateSeriesDates()` walks day-by-day from a series' start date to the semester cutoff, first trying the primary day pattern alone, then folding in the fallback day only if needed to hit the target count.
-- **State** — a simple in-memory `state` object holding all series (name, semester, pattern, generated dates, per-meeting overrides), persisted to `window.storage` after every change.
+- **State** — a simple in-memory `state` object holding all series (name, semester, pattern, generated dates, per-meeting overrides), persisted to `localStorage` after every change.
 - **Rendering** — plain DOM string templating (`innerHTML` + event listener re-binding) for the three tabs: Build a Series, Review & Export, Calendar Data.
 - **Export** — `exportCSV()` / `exportICS()` build the file contents directly from `state` and trigger a browser download.
 
@@ -85,7 +85,7 @@ No external JS dependencies, no npm, no package.json. The entire application is 
 
 - Maximum of 3 concurrent meeting series
 - Date format support is limited to ISO and US `M/D/YYYY` (not other locale date formats)
-- `window.storage` autosave is personal to whoever has the file open — it isn't shared between different people's copies
+- Autosave (`localStorage`) is tied to the specific browser and device where the file is opened — it isn't shared between different people's copies, and moving the file to a new computer or browser starts with a blank slate (export CSV/ICS to carry data over)
 - No timezone handling — all times are treated as local/wall-clock time
 
 ---
