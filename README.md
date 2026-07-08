@@ -25,12 +25,12 @@ Any custom dates are uploaded as a CSV, so the tool works for any general time s
 
 | Rule | Behavior |
 |---|---|
-| Organizational no-go dates (holidays, breaks, closures, etc.) | **Hard stop** — never scheduled |
-| Any date after cut-off date| **Hard stop** — never scheduled |
+| Organizational no-go dates (holidays, breaks, closures, etc.) | **Hard stop**, never scheduled |
+| Any date after cut-off date| **Hard stop**, never scheduled |
 | The cut-off date itself | Allowed, but flagged with a badge |
-| Busy periods | **Soft warning** — flagged, still allowed |
+| Busy periods | **Soft warning**, flagged still allowed |
 | Manual edits onto any of the above | Allowed (it's your call), but clearly flagged so it doesn't slip through unnoticed |
-| Two series overlapping in time | Not blocked — both meetings are flagged so you can decide which to move |
+| Two series overlapping in time | Not blocked. Both meetings are flagged so you can decide which to move |
 
 ---
 
