@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Schedule Helper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EDEAE4;
+    --panel: #F8F6F1;
+    --panel-2: #FFFFFF;
+    --ink: #2A2420;
+    --ink-soft: #746A5E;
+    --red: #C03030;
+    --red-dark: #A22422;
+    --teal: #3CBFAC;
+    --teal-dark: #0F7F86;
+    --warn: #A9791E;
+    --warn-bg: #F3E6C8;
+    --hard-bg: #EFDAD7;
+    --hard-ink: #8C2F27;
+    --line: #DAD3C6;
+    --radius: 12px;
+    --series-0: #C03030;
+    --series-1: #0F7F86;
+    --series-2: #A9791E;
+    --collision: #6E4A9E;
+    --collision-bg: #E9E1F2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Montserrat',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 80px;}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;border-bottom:3px solid var(--ink);padding-bottom:14px;}
+  header.top h1{font-size:26px;font-weight:800;letter-spacing:-0.01em;margin:0;}
+  header.top .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);}
+  header.top .tagline{font-size:13px;color:var(--ink-soft);width:100%;margin-top:2px;}
+
+  .tabs{display:flex;gap:2px;margin:22px 0 18px;border-bottom:1px solid var(--line);}
+  .tab-btn{
+    font-family:'Montserrat',sans-serif;font-weight:600;font-size:13.5px;
+    background:none;border:none;padding:10px 16px;cursor:pointer;color:var(--ink-soft);
+    border-bottom:3px solid transparent;margin-bottom:-1px;
+  }
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--red);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:18px;}
+  .card.white{background:var(--panel-2);}
+
+  .series-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .chip{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:500;
+    padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel-2);
+    cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;gap:6px;
+  }
+  .chip.active{border-color:var(--ink);color:var(--ink);background:#fff;}
+  .chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .chip-add{border-style:dashed;}
+  .chip-remove{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px;}
+  .chip-remove:hover{color:var(--red);}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 20px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
+  input[type=text], input[type=date], input[type=time], input[type=number], select{
+    font-family:'Montserrat',sans-serif;font-size:14px;padding:9px 10px;border-radius:8px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  }
+  input:focus, select:focus, button:focus-visible{outline:2px solid var(--teal-dark);outline-offset:1px;}
+
+  .daypattern{display:flex;gap:6px;flex-wrap:wrap;}
+  .daybox{position:relative;}
+  .daybox input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0;}
+  .daybox span{
+    display:inline-flex;align-items:center;justify-content:center;width:40px;height:34px;
+    border-radius:7px;border:1.5px solid var(--line);background:#fff;font-family:'JetBrains Mono',monospace;
+    font-size:12px;font-weight:600;color:var(--ink-soft);pointer-events:none;
+  }
+  .daybox input:checked + span{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .presets{display:flex;gap:6px;margin-top:4px;}
+  .preset-btn{
+    font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 9px;border-radius:6px;
+    border:1px dashed var(--line);background:none;color:var(--ink-soft);cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--ink-soft);color:var(--ink);}
+
+  .btn{
+    font-family:'Montserrat',sans-serif;font-weight:700;font-size:13.5px;padding:11px 20px;
+    border-radius:8px;border:none;cursor:pointer;
+  }
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-primary:hover{background:#000;}
+  .btn-outline{background:none;border:1.5px solid var(--ink);color:var(--ink);}
+  .btn-outline:hover{background:var(--ink);color:#fff;}
+  .btn-sm{padding:7px 12px;font-size:12px;}
+  .btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+
+  .rule-note{font-size:12px;color:var(--ink-soft);margin-top:14px;border-top:1px solid var(--line);padding-top:12px;line-height:1.6;}
+  .rule-note b{color:var(--ink);}
+  .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;position:relative;top:0.5px;}
+
+  /* Timeline */
+  .timeline{position:relative;height:56px;margin:18px 0 10px;overflow:hidden;}
+  .timeline .track{position:absolute;left:0;right:0;top:26px;height:4px;background:var(--line);border-radius:2px;}
+  .timeline .band{position:absolute;top:20px;height:16px;border-radius:3px;background:var(--warn-bg);border:1px solid var(--warn);opacity:0.85;}
+  .timeline .hardband{position:absolute;top:18px;height:20px;border-radius:3px;background:var(--hard-bg);border:1px solid var(--hard-ink);}
+  .timeline .dot{position:absolute;top:20px;width:10px;height:10px;border-radius:50%;transform:translateX(-50%);border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.15);}
+  .timeline .caplabel{position:absolute;top:0;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--ink-soft);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+  thead th{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;
+    letter-spacing:0.05em;color:var(--ink-soft);border-bottom:2px solid var(--ink);padding:8px 8px;
+  }
+  tbody td{padding:8px 8px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  tbody tr.soft td{background:var(--warn-bg);}
+  tbody tr.hard td{background:var(--hard-bg);}
+  tbody tr.fallback td:first-child{border-left:3px solid var(--ink);}
+  tbody td input[type=date], tbody td input[type=time]{
+    font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  }
+  .flag-pill{
+    font-family:'Montserrat',sans-serif;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px;
+    background:var(--warn);color:#fff;
+  }
+  .flag-pill.hard{background:var(--hard-ink);}
+  .flag-pill.collision{background:var(--collision);}
+  tbody tr.collision td{background:var(--collision-bg);}
+  .summary-line{font-size:13px;margin-top:14px;padding:10px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);}
+  .summary-line.shortfall{background:var(--hard-bg);border-color:var(--hard-ink);color:var(--hard-ink);font-weight:600;}
+  .empty-state{color:var(--ink-soft);font-size:13px;padding:30px 10px;text-align:center;border:1.5px dashed var(--line);border-radius:var(--radius);}
+
+  .combined-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .combined-row.collision{background:var(--collision-bg);margin:0 -8px;padding:8px;border-radius:6px;}
+  .combined-row .swatch{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .combined-row .date{font-family:'JetBrains Mono',monospace;width:150px;flex-shrink:0;}
+  .combined-row .name{font-weight:600;flex:1;}
+  .combined-row .time{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);width:110px;text-align:right;}
+
+  footer.savebar{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:26px;}
+
+  .tz-bar{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:12.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  .tz-bar label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
+  .tz-bar select{
+    font-family:'Montserrat',sans-serif;font-size:13px;padding:6px 9px;border-radius:7px;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Meeting Schedule Helper</h1>
+    </div>
+    <div class="tagline">Build recurring meeting series against a list of dates. Custom Holidays and other "NO-GO" dates can be entered as dates to avoid (hard stops), others can be entered as busy periods which are flagged so you can decide if you want to move the date. You can build multiple series in the tool and after you finalize your meetings, you can export the dates to CSV or a ICS calendar format. If adding new calendar dates, download a copy of the current calendar from the tool, change/add dates, then reupload.</div>
+  </header>
+
+  <div class="tz-bar">
+    <label for="tz-select">Timezone (used for calendar exports)</label>
+    <select id="tz-select">
+      <option value="America/New_York">Eastern (ET)</option>
+      <option value="America/Chicago">Central (CT)</option>
+      <option value="America/Denver">Mountain (MT)</option>
+      <option value="America/Phoenix">Arizona (no DST)</option>
+      <option value="America/Los_Angeles">Pacific (PT)</option>
+      <option value="America/Anchorage">Alaska (AKT)</option>
+      <option value="Pacific/Honolulu">Hawaii (HT)</option>
+    </select>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="build">Build a Series</button>
+    <button class="tab-btn" data-tab="review">Review &amp; Export</button>
+    <button class="tab-btn" data-tab="calendar">Calendar Data</button>
+  </div>
+
+  <!-- BUILD TAB -->
+  <div class="tab-panel active" id="tab-build">
+    <div class="series-chips" id="seriesChips"></div>
+
+    <div class="card white" id="formCard"></div>
+  </div>
+
+  <!-- REVIEW TAB -->
+  <div class="tab-panel" id="tab-review">
+    <div id="reviewCard"></div>
+  </div>
+
+  <!-- CALENDAR TAB -->
+  <div class="tab-panel" id="tab-calendar">
+    <div class="card white" id="calendarCard"></div>
+  </div>
+
+  <footer class="savebar" id="saveStatus">Your series are saved automatically in this browser.</footer>
+</div>
+
+<script>
+/* ---------------- Academic calendar data (CSV-driven) ---------------- */
+let SEMESTERS = {};
+
+const DEFAULT_CALENDAR_CSV = `# Meeting Schedule Helper -- calendar template
+# Type must be one of: SPAN, CUTOFF, NOGO, SOFT
+#  SPAN  = first day of classes (StartDate) through the last date meetings could ever run (EndDate) -- sets the timeline
+#  CUTOFF = the hard no-meetings-after-this-date boundary (use EndDate)
+#  NOGO  = one row per no-go date -- holiday, break, closure, conference, anything hard-blocked. Hard blackout, StartDate/EndDate can span multiple days. (HOLIDAY also accepted)
+#  SOFT  = one row per exam window etc -- flagged but still allowed, needs a Label
+# Add a new semester by adding rows with a new Semester name. Delete rows/semesters you don't need, then re-upload.
+Semester,Type,StartDate,EndDate,Label
+Fall 2026,SPAN,2026-08-17,2026-12-07,
+Fall 2026,CUTOFF,2026-12-07,2026-12-07,
+Fall 2026,NOGO,2026-09-07,2026-09-07,Labor Day
+Fall 2026,NOGO,2026-11-25,2026-11-27,Thanksgiving Break
+Fall 2026,SOFT,2026-09-05,2026-09-10,Short I midterms
+Fall 2026,SOFT,2026-10-02,2026-10-08,16-wk midterms
+Fall 2026,SOFT,2026-10-02,2026-10-06,Short I finals
+Fall 2026,SOFT,2026-10-31,2026-11-04,Short II midterms
+Fall 2026,SOFT,2026-11-29,2026-12-04,16-wk & Short II finals
+Spring 2027,SPAN,2027-01-11,2027-04-29,
+Spring 2027,CUTOFF,2027-04-29,2027-04-29,
+Spring 2027,NOGO,2027-01-18,2027-01-18,MLK Day
+Spring 2027,SOFT,2027-01-31,2027-02-04,Short I midterms
+Spring 2027,SOFT,2027-02-26,2027-03-04,16-wk midterms
+Spring 2027,SOFT,2027-02-26,2027-03-03,Short I finals
+Spring 2027,SOFT,2027-03-26,2027-04-01,Short II midterms
+Spring 2027,SOFT,2027-04-21,2027-04-26,16-wk finals
+Spring 2027,SOFT,2027-04-22,2027-04-27,Short II finals
+`;
+
+function splitCSVLine(line){
+  const result = [];
+  let cur = "", inQuotes = false;
+  for (let i=0;i<line.length;i++){
+    const c = line[i];
+    if (c === '"'){ inQuotes = !inQuotes; continue; }
+    if (c === "," && !inQuotes){ result.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  result.push(cur);
+  return result.map(s=>s.trim());
+}
+function toISOFlexible(raw){
+  if (!raw) return null;
+  const s = String(raw).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) return `${m[3]}-${m[1].padStart(2,"0")}-${m[2].padStart(2,"0")}`;
+  return null;
+}
+function dateRange(startISO, endISO){
+  const out = [];
+  let d = parseISO(startISO);
+  const end = parseISO(endISO || startISO);
+  while (d <= end){ out.push(toISO(d)); d = addDays(d,1); }
+  return out;
+}
+function parseCalendarCSV(text){
+  text = text.replace(/^\uFEFF/, ""); // strip Excel UTF-8 BOM if present
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l => l && !/^"?#/.test(l));
+  if (!lines.length) return { semesters: {}, errors: ["File is empty."] };
+  const header = splitCSVLine(lines[0]).map(normalize);
+  const idx = {};
+  ["semester","type","startdate","enddate","label"].forEach(n => idx[n] = header.indexOf(n));
+  if (idx.semester === -1 || idx.type === -1 || idx.startdate === -1){
+    return { semesters: {}, errors: [`Header row must include at least: Semester, Type, StartDate, EndDate, Label. Found: ${splitCSVLine(lines[0]).join(", ")}`] };
+  }
+  const semesters = {};
+  const errors = [];
+  for (let i=1;i<lines.length;i++){
+    const cols = splitCSVLine(lines[i]);
+    const semLabel = cols[idx.semester];
+    const type = (cols[idx.type]||"").toUpperCase();
+    const rawStart = cols[idx.startdate];
+    const rawEnd = idx.enddate>-1 ? (cols[idx.enddate] || rawStart) : rawStart;
+    const label = idx.label>-1 ? (cols[idx.label]||"") : "";
+    if (!semLabel || !type) continue;
+    const key = semLabel.replace(/\s+/g,"").toLowerCase();
+    if (!semesters[key]) semesters[key] = { label: semLabel, cutoff:null, holidays:[], softWindows:[], span:[null,null] };
+    const s = semesters[key];
+    const startDate = toISOFlexible(rawStart);
+    const endDate = toISOFlexible(rawEnd) || startDate;
+    if (!startDate){
+      errors.push(`Row ${i+1}: invalid date "${rawStart}" (use YYYY-MM-DD or M/D/YYYY)`); continue;
+    }
+    if (type === "SPAN") s.span = [startDate, endDate || startDate];
+    else if (type === "CUTOFF") s.cutoff = endDate || startDate;
+    else if (type === "NOGO" || type === "HOLIDAY") dateRange(startDate, endDate).forEach(d => s.holidays.push({date: d, label: label || "No-go date"}));
+    else if (type === "SOFT") s.softWindows.push({start:startDate, end: endDate||startDate, label: label || "Flagged period"});
+    else errors.push(`Row ${i+1}: unknown type "${cols[idx.type]}" (expected SPAN, CUTOFF, NOGO, or SOFT)`);
+  }
+  Object.keys(semesters).forEach(key => {
+    const s = semesters[key];
+    if (!s.cutoff) s.cutoff = s.span[1];
+    if (!s.span[0]) errors.push(`Semester "${s.label}" is missing a SPAN row.`);
+    if (!s.cutoff) errors.push(`Semester "${s.label}" is missing a CUTOFF row.`);
+  });
+  return { semesters, errors };
+}
+function applyCalendar(semesters){ SEMESTERS = semesters; }
+function firstSemesterKey(){ const k = Object.keys(SEMESTERS); return k.length ? k[0] : null; }
+
+async function saveCalendarCSV(text){
+  try{ localStorage.setItem("schedule-helper:calendar", text); }catch(e){ /* ignore */ }
+}
+async function loadCalendarCSV(){
+  try{
+    const text = localStorage.getItem("schedule-helper:calendar");
+    if (text) return text;
+  }catch(e){ /* none saved yet */ }
+  return null;
+}
+
+const DAY_LABELS = ["S","M","T","W","T","F","S"];
+const DAY_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const SERIES_COLORS = ["var(--series-0)","var(--series-1)","var(--series-2)"];
+const TIMEZONES = [
+  {id:"America/New_York", label:"Eastern (ET)"},
+  {id:"America/Chicago", label:"Central (CT)"},
+  {id:"America/Denver", label:"Mountain (MT)"},
+  {id:"America/Phoenix", label:"Arizona (no DST)"},
+  {id:"America/Los_Angeles", label:"Pacific (PT)"},
+  {id:"America/Anchorage", label:"Alaska (AKT)"},
+  {id:"Pacific/Honolulu", label:"Hawaii (HT)"}
+];
+let timezone = "America/New_York";
+try{
+  const savedTz = localStorage.getItem("schedule-helper:timezone");
+  if (savedTz) timezone = savedTz;
+}catch(e){ /* use default */ }
+function saveTimezone(tz){
+  timezone = tz;
+  try{ localStorage.setItem("schedule-helper:timezone", tz); }catch(e){ /* ignore */ }
+}
+function tzLabel(id){
+  const found = TIMEZONES.find(t => t.id === id);
+  return found ? found.label : id;
+}
+
+/* ---------------- Date helpers ---------------- */
+function parseISO(s){ const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+function toISO(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function addDays(d,n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmtDate(d){ return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"}); }
+function fmtTime12(hhmm){
+  const [h,m] = hhmm.split(":").map(Number);
+  const period = h>=12?"PM":"AM";
+  const h12 = ((h+11)%12)+1;
+  return h12+":"+String(m).padStart(2,"0")+" "+period;
+}
+function addMinutes(hhmm, mins){
+  const [h,m] = hhmm.split(":").map(Number);
+  const total = h*60+m+mins;
+  const nh = Math.floor((total%1440)/60), nm = total%60;
+  return String(nh).padStart(2,"0")+":"+String(nm).padStart(2,"0");
+}
+function tzOffsetMinutes(utcMs, timeZone){
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone, hourCycle: "h23",
+    year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit"
+  });
+  const parts = dtf.formatToParts(new Date(utcMs)).reduce((acc,p) => {
+    if (p.type !== "literal") acc[p.type] = p.value;
+    return acc;
+  }, {});
+  const asUTC = Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+  return (asUTC - utcMs) / 60000;
+}
+function zonedTimeToUTCms(dateObj, hhmm, timeZone){
+  const [h,m] = hhmm.split(":").map(Number);
+  const y = dateObj.getFullYear(), mo = dateObj.getMonth(), d = dateObj.getDate();
+  let guess = Date.UTC(y, mo, d, h, m, 0);
+  // Two passes handles DST-transition days correctly without a timezone library.
+  for (let i=0;i<2;i++){
+    const offset = tzOffsetMinutes(guess, timeZone);
+    guess = Date.UTC(y, mo, d, h, m, 0) - offset*60000;
+  }
+  return guess;
+}
+function isHardBlackout(d, semKey){
+  const iso = toISO(d);
+  const cfg = SEMESTERS[semKey];
+  if (iso > cfg.cutoff) return true;
+  if (cfg.holidays.some(h => h.date === iso)) return true;
+  return false;
+}
+function hardFlagLabel(d, semKey){
+  const iso = toISO(d);
+  const cfg = SEMESTERS[semKey];
+  const h = cfg.holidays.find(h => h.date === iso);
+  if (h) return h.label;
+  if (iso > cfg.cutoff) return "Past grades-due cutoff";
+  return "Blackout date";
+}
+function cutoffFlagLabel(d, semKey){
+  const iso = toISO(d);
+  const cfg = SEMESTERS[semKey];
+  return iso === cfg.cutoff ? "Grades due this day" : null;
+}
+function softFlagLabel(d, semKey){
+  const iso = toISO(d);
+  for (const w of SEMESTERS[semKey].softWindows){
+    if (iso >= w.start && iso <= w.end) return w.label;
+  }
+  return null;
+}
+
+/* ---------------- State ---------------- */
+let state = { series: [], activeId: null };
+let idCounter = 1;
+
+function newSeries(){
+  const id = idCounter++;
+  const semKey = firstSemesterKey();
+  return {
+    id,
+    name: "Series " + id,
+    semester: semKey,
+    primaryDays: [1,3],
+    fallbackDay: "",
+    targetCount: 12,
+    startDate: semKey ? SEMESTERS[semKey].span[0] : "",
+    time: "11:00",
+    duration: 45,
+    generated: null // {dates:[...], shortfall, usedFallback}
+  };
+}
+
+/* ---------------- Persistence ---------------- */
+async function saveState(){
+  try{
+    localStorage.setItem("schedule-helper:series", JSON.stringify(state));
+    document.getElementById("saveStatus").textContent = "Saved to this browser \u00b7 " + new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById("saveStatus").textContent = "Autosave unavailable (private browsing or storage blocked) \u2014 export your schedule to keep a copy.";
+  }
+}
+async function loadState(){
+  try{
+    const text = localStorage.getItem("schedule-helper:series");
+    if (text){
+      const parsed = JSON.parse(text);
+      if (parsed && parsed.series && parsed.series.length){
+        state = parsed;
+        idCounter = Math.max(...state.series.map(s=>s.id)) + 1;
+        return true;
+      }
+    }
+  }catch(e){ /* no saved state yet */ }
+  return false;
+}
+
+/* ---------------- Generation algorithm ---------------- */
+function generateSeriesDates(series){
+  const cfg = SEMESTERS[series.semester];
+  const start = parseISO(series.startDate);
+  const cutoff = parseISO(cfg.cutoff);
+  const primary = series.primaryDays;
+  const fallback = series.fallbackDay === "" ? null : Number(series.fallbackDay);
+
+  const primaryOnly = [];
+  for (let d = new Date(start); d <= cutoff; d = addDays(d,1)){
+    if (isHardBlackout(d, series.semester)) continue;
+    if (primary.includes(d.getDay())) primaryOnly.push({date: new Date(d), fallback:false});
+  }
+
+  let finalDates, usedFallback = false;
+  if (primaryOnly.length >= series.targetCount){
+    finalDates = primaryOnly.slice(0, series.targetCount);
+  } else if (fallback !== null){
+    usedFallback = true;
+    const combined = [];
+    for (let d = new Date(start); d <= cutoff; d = addDays(d,1)){
+      if (isHardBlackout(d, series.semester)) continue;
+      const dow = d.getDay();
+      if (primary.includes(dow) || dow === fallback){
+        combined.push({date: new Date(d), fallback: dow === fallback && !primary.includes(dow)});
+      }
+    }
+    finalDates = combined.slice(0, series.targetCount);
+  } else {
+    finalDates = primaryOnly;
+  }
+
+  finalDates = finalDates.map(item => ({
+    ...item,
+    time: series.time,
+    duration: series.duration,
+    hardFlag: false,
+    hardFlagLabel: null,
+    edited: false,
+    collision: null,
+    softFlag: softFlagLabel(item.date, series.semester),
+    cutoffFlag: cutoffFlagLabel(item.date, series.semester)
+  }));
+
+  return { dates: finalDates, shortfall: series.targetCount - finalDates.length, usedFallback };
+}
+
+/* ---------------- Rendering: chips ---------------- */
+function renderChips(){
+  const wrap = document.getElementById("seriesChips");
+  wrap.innerHTML = "";
+  state.series.forEach((s, i) => {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (s.id === state.activeId ? " active" : "");
+    chip.innerHTML = `<span class="dot" style="background:${SERIES_COLORS[i % 3]}"></span><span>${escapeHtml(s.name)}</span>` +
+      (state.series.length > 1 ? `<button class="chip-remove" data-remove="${s.id}" title="Remove series">&times;</button>` : "");
+    chip.addEventListener("click", (e) => {
+      if (e.target.dataset.remove) return;
+      state.activeId = s.id;
+      renderAll();
+    });
+    wrap.appendChild(chip);
+  });
+  if (state.series.length < 3){
+    const add = document.createElement("button");
+    add.className = "chip chip-add";
+    add.textContent = "+ Add series";
+    add.addEventListener("click", () => {
+      const s = newSeries();
+      state.series.push(s);
+      state.activeId = s.id;
+      saveState();
+      renderAll();
+    });
+    wrap.appendChild(add);
+  }
+  wrap.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = Number(btn.dataset.remove);
+      state.series = state.series.filter(s => s.id !== id);
+      if (state.activeId === id) state.activeId = state.series[0] ? state.series[0].id : null;
+      saveState();
+      renderAll();
+    });
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ---------------- Rendering: form ---------------- */
+function renderForm(){
+  const card = document.getElementById("formCard");
+  const series = state.series.find(s => s.id === state.activeId);
+  if (!series){
+    card.innerHTML = `<div class="empty-state">No series yet. Click <b>+ Add series</b> above to start building a schedule.</div>`;
+    return;
+  }
+  const semKeys = Object.keys(SEMESTERS);
+  if (!semKeys.length){
+    card.innerHTML = `<div class="empty-state">No calendar loaded. Head to the <b>Calendar Data</b> tab and upload a calendar CSV first.</div>`;
+    return;
+  }
+  card.innerHTML = `
+    <div class="grid">
+      <div class="field full">
+        <label>Series name</label>
+        <input type="text" id="f-name" value="${escapeHtml(series.name)}">
+      </div>
+      <div class="field">
+        <label>Semester</label>
+        <select id="f-semester">
+          ${semKeys.map(k => `<option value="${k}" ${series.semester===k?"selected":""}>${escapeHtml(SEMESTERS[k].label)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field">
+        <label>Number of meetings</label>
+        <input type="number" id="f-count" min="1" max="60" value="${series.targetCount}">
+      </div>
+      <div class="field">
+        <label>Start date</label>
+        <input type="date" id="f-start" value="${series.startDate}">
+      </div>
+      <div class="field">
+        <label>Start time</label>
+        <input type="time" id="f-time" value="${series.time}">
+      </div>
+      <div class="field">
+        <label>Duration (minutes)</label>
+        <input type="number" id="f-duration" min="5" max="240" step="5" value="${series.duration}">
+      </div>
+      <div class="field">
+        <label>Fallback day (Used if primary pattern can't reach number of meetings)</label>
+        <select id="f-fallback">
+          <option value="">None</option>
+          ${DAY_FULL.map((d,i)=>`<option value="${i}" ${String(series.fallbackDay)===String(i)?"selected":""}>${d}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field full">
+        <label>Primary meeting pattern (Select from the presets below or pick specific recurring meeting days)</label>
+        <div class="presets">
+          <button type="button" class="preset-btn" data-preset="2">Tue only</button>
+          <button type="button" class="preset-btn" data-preset="4">Thu only</button>
+          <button type="button" class="preset-btn" data-preset="1,3">Mon / Wed</button>
+          <button type="button" class="preset-btn" data-preset="2,4">Tue / Thu</button>
+          <button type="button" class="preset-btn" data-preset="1,3,5">Mon / Wed / Fri</button>
+        </div>
+        <div class="daypattern" id="f-days" style="margin-top:8px;">
+          ${DAY_LABELS.map((lab,i)=>`
+            <label class="daybox" title="${DAY_FULL[i]}">
+              <input type="checkbox" value="${i}" ${series.primaryDays.includes(i)?"checked":""}>
+              <span>${lab}</span>
+            </label>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="f-generate">Generate schedule</button>
+    </div>
+    <div class="rule-note">
+      <b>Hard stops</b> (never scheduled): Institutional holidays and any date after grades are due.
+      <b>Soft warning</b> (flagged, still allowed): midterm and final exam weeks.
+      <b>Fallback Day</b> (optional): The day used if holidays or other no-go dates don't allow you to reach your meeting number for your preferred day(s). 
+    </div>
+    <div id="genStatus"></div>
+  `;
+
+  document.getElementById("f-name").addEventListener("change", e => { series.name = e.target.value || series.name; saveState(); renderChips(); });
+  document.getElementById("f-semester").addEventListener("change", e => {
+    series.semester = e.target.value;
+    series.startDate = SEMESTERS[series.semester].span[0];
+    document.getElementById("f-start").value = series.startDate;
+    saveState();
+  });
+  document.getElementById("f-count").addEventListener("change", e => { series.targetCount = Math.max(1, Number(e.target.value)||1); saveState(); });
+  document.getElementById("f-start").addEventListener("change", e => { series.startDate = e.target.value; saveState(); });
+  document.getElementById("f-time").addEventListener("change", e => { series.time = e.target.value; saveState(); });
+  document.getElementById("f-duration").addEventListener("change", e => { series.duration = Math.max(5, Number(e.target.value)||45); saveState(); });
+  document.getElementById("f-fallback").addEventListener("change", e => { series.fallbackDay = e.target.value; saveState(); });
+  document.getElementById("f-days").querySelectorAll("input").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const checked = Array.from(document.getElementById("f-days").querySelectorAll("input:checked")).map(x=>Number(x.value));
+      series.primaryDays = checked.sort();
+      saveState();
+    });
+  });
+  card.querySelectorAll("[data-preset]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const days = btn.dataset.preset.split(",").map(Number);
+      series.primaryDays = days;
+      saveState();
+      renderForm();
+    });
+  });
+  document.getElementById("f-generate").addEventListener("click", () => {
+    if (series.primaryDays.length === 0){
+      alert("Pick at least one primary meeting day before generating.");
+      return;
+    }
+    series.generated = generateSeriesDates(series);
+    recomputeAllCollisions();
+    saveState();
+    renderGenStatus(series);
+  });
+
+  renderGenStatus(series);
+}
+
+function renderGenStatus(series){
+  const box = document.getElementById("genStatus");
+  if (!box) return;
+  box.innerHTML = series.generated
+    ? `<div class="summary-line">\u2713 Schedule generated for <b>${escapeHtml(series.name)}</b>. Go to <b>Review &amp; Export</b> to view the generated series and make edits.</div>`
+    : `<div class="empty-state">Set your pattern above, then click <b>Generate schedule</b>. You'll review and edit the result under Review &amp; Export.</div>`;
+}
+
+/* ---------------- Collision detection ---------------- */
+function timeToMinutes(hhmm){ const [h,m] = hhmm.split(":").map(Number); return h*60+m; }
+function recomputeAllCollisions(){
+  const flat = [];
+  state.series.forEach(s => {
+    if (s.generated) s.generated.dates.forEach(item => {
+      item.collision = null;
+      flat.push({ series: s, item });
+    });
+  });
+  for (let i=0;i<flat.length;i++){
+    for (let j=i+1;j<flat.length;j++){
+      const A = flat[i], B = flat[j];
+      if (A.item === B.item) continue;
+      if (toISO(A.item.date) !== toISO(B.item.date)) continue;
+      const aStart = timeToMinutes(A.item.time), aEnd = aStart + (A.item.duration ?? A.series.duration);
+      const bStart = timeToMinutes(B.item.time), bEnd = bStart + (B.item.duration ?? B.series.duration);
+      if (aStart < bEnd && bStart < aEnd){
+        const sameSeries = A.series === B.series;
+        if (!A.item.collision) A.item.collision = [];
+        if (!B.item.collision) B.item.collision = [];
+        A.item.collision.push(sameSeries ? "another meeting in this series" : B.series.name);
+        B.item.collision.push(sameSeries ? "another meeting in this series" : A.series.name);
+      }
+    }
+  }
+}
+function flagBadges(item){
+  const parts = [];
+  if (item.hardFlag) parts.push(`<span class="flag-pill hard">${item.hardFlagLabel || "On a blackout date"}</span>`);
+  else if (item.cutoffFlag) parts.push(`<span class="flag-pill hard">${item.cutoffFlag}</span>`);
+  else if (item.softFlag) parts.push(`<span class="flag-pill">${item.softFlag}</span>`);
+  if (item.collision && item.collision.length){
+    const label = item.collision.length > 1 ? `Overlaps ${item.collision.length} others` : `Overlaps: ${item.collision[0]}`;
+    parts.push(`<span class="flag-pill collision">${escapeHtml(label)}</span>`);
+  }
+  return parts.join(" ");
+}
+
+function renderResults(series, wrap){
+  const { dates, shortfall, usedFallback } = series.generated;
+  const cfg = SEMESTERS[series.semester];
+  const spanStart = parseISO(cfg.span[0]).getTime();
+  const spanEnd = parseISO(cfg.cutoff).getTime();
+  const spanLen = spanEnd - spanStart;
+  const pct = (iso) => Math.max(0.3, Math.min(99.7, ((parseISO(iso).getTime() - spanStart) / spanLen) * 100));
+
+  let timelineHtml = `<div class="timeline">
+    <div class="track"></div>
+    <div class="caplabel" style="left:0">${cfg.span[0].slice(5)}</div>
+    <div class="caplabel" style="right:0">${cfg.cutoff.slice(5)} cutoff</div>`;
+  cfg.softWindows.forEach(w => {
+    const left = pct(w.start), right = pct(w.end);
+    timelineHtml += `<div class="band" style="left:${left}%;width:${Math.max(right-left,0.6)}%" title="${w.label}"></div>`;
+  });
+  cfg.holidays.forEach(h => {
+    const left = pct(h.date);
+    timelineHtml += `<div class="hardband" style="left:${left}%;width:0.6%" title="${h.label}"></div>`;
+  });
+  dates.forEach(item => {
+    const left = pct(toISO(item.date));
+    const color = item.hardFlag ? "var(--hard-ink)" : (item.softFlag ? "var(--warn)" : (item.fallback ? "var(--ink)" : "var(--teal-dark)"));
+    timelineHtml += `<div class="dot" style="left:${left}%;background:${color}" title="${fmtDate(item.date)}"></div>`;
+  });
+  timelineHtml += `</div>`;
+
+  let rows = dates.map((item, idx) => `
+    <tr class="${item.softFlag ? "soft" : ""} ${(item.hardFlag || item.cutoffFlag) ? "hard" : ""} ${(item.collision && item.collision.length) ? "collision" : ""} ${item.fallback ? "fallback" : ""}">
+      <td><input type="date" class="row-date" data-idx="${idx}" value="${toISO(item.date)}"></td>
+      <td>${DAY_FULL[item.date.getDay()].slice(0,3)}</td>
+      <td><input type="time" class="row-time" data-idx="${idx}" value="${item.time}"></td>
+      <td><input type="time" class="row-endtime" data-idx="${idx}" value="${addMinutes(item.time, item.duration)}"></td>
+      <td>${item.edited ? "Edited" : (item.fallback ? "Fallback day" : "Primary pattern")}</td>
+      <td>${flagBadges(item) || "\u2014"}</td>
+    </tr>`).join("");
+
+  let summary = `Generated <b>${dates.length}</b> of <b>${series.targetCount}</b> requested meetings.`;
+  if (usedFallback) summary += ` Primary pattern alone wasn't enough \u2014 fallback day was used to fill the gap.`;
+  const softCount = dates.filter(d=>d.softFlag && !d.hardFlag).length;
+  if (softCount) summary += ` ${softCount} meeting${softCount>1?"s fall":" falls"} in an exam week (flagged below).`;
+  const hardCount = dates.filter(d=>d.hardFlag).length;
+  if (hardCount) summary += ` ${hardCount} manually-edited meeting${hardCount>1?"s sit":" sits"} on a holiday or past the cutoff \u2014 double check ${hardCount>1?"those":"that"}.`;
+  const collisionCount = dates.filter(d=>d.collision && d.collision.length).length;
+  if (collisionCount) summary += ` ${collisionCount} meeting${collisionCount>1?"s overlap":" overlaps"} with another series \u2014 flagged below.`;
+
+  wrap.innerHTML = `
+    ${timelineHtml}
+    ${shortfall > 0 ? `<div class="summary-line shortfall">Short by ${shortfall} meeting${shortfall>1?"s":""} \u2014 the pattern (plus fallback, if set) ran out of room before the ${cfg.cutoff.slice(5)} cutoff. Add a fallback day, widen the pattern, or start earlier.</div>` : `<div class="summary-line">${summary}</div>`}
+    <table>
+      <thead><tr><th>Date <span style="text-transform:none;font-weight:400;">(editable)</span></th><th>Day</th><th>Start <span style="text-transform:none;font-weight:400;">(editable)</span></th><th>End <span style="text-transform:none;font-weight:400;">(editable)</span></th><th>Source</th><th>Flag</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm exp-csv-one">Export CSV</button>
+      <button class="btn btn-outline btn-sm exp-ics-one">Export ICS</button>
+    </div>
+  `;
+  wrap.querySelectorAll(".row-date").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const idx = Number(e.target.dataset.idx);
+      const item = series.generated.dates[idx];
+      if (!e.target.value) return;
+      item.date = parseISO(e.target.value);
+      item.edited = true;
+      item.softFlag = softFlagLabel(item.date, series.semester);
+      item.hardFlag = isHardBlackout(item.date, series.semester);
+      item.hardFlagLabel = item.hardFlag ? hardFlagLabel(item.date, series.semester) : null;
+      item.cutoffFlag = cutoffFlagLabel(item.date, series.semester);
+      series.generated.dates.sort((a,b) => a.date - b.date);
+      recomputeAllCollisions();
+      saveState();
+      renderReview();
+    });
+  });
+  wrap.querySelectorAll(".row-time").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const idx = Number(e.target.dataset.idx);
+      series.generated.dates[idx].time = e.target.value;
+      series.generated.dates[idx].edited = true;
+      recomputeAllCollisions();
+      saveState();
+      renderReview();
+    });
+  });
+  wrap.querySelectorAll(".row-endtime").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const idx = Number(e.target.dataset.idx);
+      const item = series.generated.dates[idx];
+      const startMin = timeToMinutes(item.time);
+      const endMin = timeToMinutes(e.target.value);
+      const newDuration = endMin - startMin;
+      if (newDuration <= 0){
+        alert("End time must be after start time.");
+        e.target.value = addMinutes(item.time, item.duration);
+        return;
+      }
+      item.duration = newDuration;
+      item.edited = true;
+      recomputeAllCollisions();
+      saveState();
+      renderReview();
+    });
+  });
+  wrap.querySelector(".exp-csv-one").addEventListener("click", () => exportCSV([series]));
+  wrap.querySelector(".exp-ics-one").addEventListener("click", () => exportICS([series]));
+}
+
+/* ---------------- Review tab ---------------- */
+function renderReview(){
+  recomputeAllCollisions();
+  const card = document.getElementById("reviewCard");
+  const withDates = state.series.filter(s => s.generated && s.generated.dates.length);
+  if (!withDates.length){
+    card.innerHTML = `<div class="empty-state">No generated meetings yet. Build a series first, then come back here to review and export it.</div>`;
+    return;
+  }
+
+  const detailSections = withDates.map((s, i) => {
+    const colorIdx = state.series.findIndex(x=>x.id===s.id) % 3;
+    return `
+      <div class="card white" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+          <span class="swatch" style="width:9px;height:9px;border-radius:50%;background:${SERIES_COLORS[colorIdx]};display:inline-block;"></span>
+          <div style="font-weight:700;font-size:15px;">${escapeHtml(s.name)}</div>
+        </div>
+        <div id="detail-${s.id}"></div>
+      </div>`;
+  }).join("");
+
+  const rows = [];
+  withDates.forEach((s) => {
+    const colorIdx = state.series.findIndex(x=>x.id===s.id) % 3;
+    s.generated.dates.forEach(item => {
+      rows.push({ series: s, color: SERIES_COLORS[colorIdx], date: item.date, time: item.time, softFlag: item.softFlag, hardFlag: item.hardFlag, hardFlagLabel: item.hardFlagLabel, cutoffFlag: item.cutoffFlag, collision: item.collision });
+    });
+  });
+  rows.sort((a,b)=>a.date-b.date);
+
+  const rowsHtml = rows.map(r => `
+    <div class="combined-row ${(r.collision && r.collision.length) ? "collision" : ""}">
+      <span class="swatch" style="background:${r.color}"></span>
+      <span class="date">${fmtDate(r.date)}</span>
+      <span class="name">${escapeHtml(r.series.name)}${flagBadges(r) ? " " + flagBadges(r) : ""}</span>
+      <span class="time">${fmtTime12(r.time)}</span>
+    </div>`).join("");
+
+  card.innerHTML = `
+    ${detailSections}
+    <div class="card white">
+      <div style="font-weight:700;font-size:15px;margin-bottom:2px;">All series combined</div>
+      <div style="margin-bottom:14px;font-size:13px;color:var(--ink-soft);">${withDates.length} series &middot; ${rows.length} total meetings</div>
+      ${rowsHtml}
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" id="exp-csv-all">Export all as CSV</button>
+        <button class="btn btn-primary btn-sm" id="exp-ics-all">Export all as ICS</button>
+      </div>
+    </div>
+  `;
+  withDates.forEach(s => renderResults(s, document.getElementById(`detail-${s.id}`)));
+  document.getElementById("exp-csv-all").addEventListener("click", () => exportCSV(withDates));
+  document.getElementById("exp-ics-all").addEventListener("click", () => exportICS(withDates));
+}
+
+/* ---------------- Calendar tab ---------------- */
+function migrateSeriesToValidSemesters(){
+  let migrated = false;
+  state.series.forEach(s => {
+    if (!SEMESTERS[s.semester]){
+      const k = firstSemesterKey();
+      s.semester = k;
+      s.startDate = k ? SEMESTERS[k].span[0] : s.startDate;
+      s.generated = null;
+      migrated = true;
+    }
+  });
+  return migrated;
+}
+
+function renderCalendarTab(){
+  const card = document.getElementById("calendarCard");
+  const keys = Object.keys(SEMESTERS);
+  const listHtml = keys.length ? keys.map(k => {
+    const s = SEMESTERS[k];
+    return `<div class="combined-row">
+      <span class="name">${escapeHtml(s.label)}</span>
+      <span class="time" style="text-align:left;width:auto;flex:1;">${s.span[0]} \u2192 ${s.cutoff} &middot; ${s.holidays.length} hard blackout date(s) &middot; ${s.softWindows.length} flagged window(s)</span>
+    </div>`;
+  }).join("") : `<div class="empty-state">No calendar loaded.</div>`;
+
+  card.innerHTML = `
+    <div class="field full" style="margin-bottom:16px;">
+      <label>Currently loaded semesters</label>
+      ${listHtml}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm" id="cal-download">Download current calendar as CSV</button>
+      <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+        Upload calendar CSV
+        <input type="file" id="cal-upload" accept=".csv,text/csv" style="display:none;">
+      </label>
+    </div>
+    <div id="calMsg"></div>
+    <div class="rule-note">
+      Uploading a CSV replaces the dates above. Worth downloading the current one first, editing it in a spreadsheet (add new date data, delete the ones you're done with), then re-upload.
+      Row types: <b>SPAN</b> sets the timeline (i.e., first day of classes - last possible date), <b>CUTOFF</b> is the hard no-meetings-after date, <b>NOGO</b> is a hard blackout (holiday, break, closure, etc. <b>HOLIDAY</b> also works), <b>SOFT</b> is a flagged-but-allowed window (needs a Label).
+      <br>Click "Download current calendar as CSV for the template"</br>
+    </div>
+  `;
+  document.getElementById("cal-download").addEventListener("click", async () => {
+    const csv = (await loadCalendarCSV()) || DEFAULT_CALENDAR_CSV;
+    download("calendar_template.csv", csv, "text/csv");
+  });
+  document.getElementById("cal-upload").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const text = String(reader.result);
+      const { semesters, errors } = parseCalendarCSV(text);
+      const msg = document.getElementById("calMsg");
+      if (Object.keys(semesters).length === 0){
+        msg.innerHTML = `<div class="summary-line shortfall">Couldn't load a calendar from that file. ${errors.join(" ")}</div>`;
+        return;
+      }
+      applyCalendar(semesters);
+      await saveCalendarCSV(text);
+      const migrated = migrateSeriesToValidSemesters();
+      await saveState();
+      msg.innerHTML = errors.length
+        ? `<div class="summary-line shortfall">Loaded with warnings: ${errors.join(" ")}</div>`
+        : `<div class="summary-line">Loaded ${Object.keys(semesters).length} semester(s) successfully.${migrated ? " Heads up: one or more series were reassigned to a valid semester \u2014 double-check them under Build a Series." : ""}</div>`;
+      renderAll();
+      renderCalendarTab();
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* ---------------- Export ---------------- */
+function download(filename, content, mime){
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportCSV(seriesList){
+  let lines = ["Series,Date,Day,Start Time,End Time,Timezone,Source,Flag"];
+  seriesList.forEach(s => {
+    s.generated.dates.forEach(item => {
+      lines.push([
+        `"${s.name.replace(/"/g,'""')}"`,
+        toISO(item.date),
+        DAY_FULL[item.date.getDay()],
+        fmtTime12(item.time),
+        fmtTime12(addMinutes(item.time, item.duration ?? s.duration)),
+        tzLabel(timezone),
+        item.edited ? "Manually edited" : (item.fallback ? "Fallback day" : "Primary pattern"),
+        item.hardFlag ? (item.hardFlagLabel || "On a blackout date") : (item.cutoffFlag || item.softFlag || "")
+      ].join(","));
+    });
+  });
+  download("meeting_schedule.csv", lines.join("\n"), "text/csv");
+}
+function pad(n){ return String(n).padStart(2,"0"); }
+function icsUTCString(ms){
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+}
+function exportICS(seriesList){
+  let lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Faculty Development//Meeting Schedule Helper//EN"];
+  let uidCounter = 0;
+  seriesList.forEach(s => {
+    s.generated.dates.forEach(item => {
+      uidCounter++;
+      const startMs = zonedTimeToUTCms(item.date, item.time, timezone);
+      const endMs = zonedTimeToUTCms(item.date, addMinutes(item.time, item.duration ?? s.duration), timezone);
+      const note = item.hardFlag ? `Manually set on: ${item.hardFlagLabel || "a blackout date"}` : (item.cutoffFlag ? item.cutoffFlag : (item.softFlag ? "Falls during: " + item.softFlag : "Generated by Meeting Schedule Helper"));
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:${Date.now()}-${uidCounter}@schedule-helper`,
+        `DTSTAMP:${icsUTCString(Date.now())}`,
+        `DTSTART:${icsUTCString(startMs)}`,
+        `DTEND:${icsUTCString(endMs)}`,
+        `SUMMARY:${s.name}`,
+        `DESCRIPTION:${note}`,
+        "END:VEVENT"
+      );
+    });
+  });
+  lines.push("END:VCALENDAR");
+  download("meeting_schedule.ics", lines.join("\r\n"), "text/calendar");
+}
+
+/* ---------------- Tabs & boot ---------------- */
+function renderAll(){
+  renderChips();
+  renderForm();
+  renderReview();
+}
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "review") renderReview();
+    if (btn.dataset.tab === "calendar") renderCalendarTab();
+  });
+});
+
+(async function init(){
+  const tzSelect = document.getElementById("tz-select");
+  tzSelect.value = timezone;
+  tzSelect.addEventListener("change", e => saveTimezone(e.target.value));
+
+  const savedCsv = await loadCalendarCSV();
+  const csvText = savedCsv || DEFAULT_CALENDAR_CSV;
+  const { semesters } = parseCalendarCSV(csvText);
+  applyCalendar(semesters);
+  if (!savedCsv) await saveCalendarCSV(DEFAULT_CALENDAR_CSV);
+
+  const loaded = await loadState();
+  if (!loaded){
+    const s = newSeries();
+    state.series.push(s);
+    state.activeId = s.id;
+  } else if (migrateSeriesToValidSemesters()){
+    saveState();
+  }
+  if (!state.activeId && state.series.length) state.activeId = state.series[0].id;
+  renderAll();
+  renderCalendarTab();
+})();
+</script>
+</body>
+</html>
